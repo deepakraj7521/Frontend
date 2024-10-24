@@ -34,25 +34,32 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Step 5: Build the Docker image
+      # Step 5: Debugging step to verify environment variables
+      - name: Print environment variables
+        run: |
+          echo "ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}"
+          echo "ECR_REPOSITORY: ${{ secrets.REPO_NAME }}"
+          echo "IMAGE_TAG: ${{ github.sha }}"
+          if [ -z "${{ secrets.REPO_NAME }}" ]; then
+            echo "Error: REPO_NAME is empty. Please check your secrets."
+            exit 1
+          fi
+
+      # Step 6: Build the Docker image
       - name: Build Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}  # This should now point to the correct secret
+          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          if [ -z "$ECR_REPOSITORY" ]; then
-            echo "ECR_REPOSITORY is not set. Please check your repository secrets."
-            exit 1
-          fi
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
 
-      # Step 6: Tag Docker image
+      # Step 7: Tag Docker image
       - name: Tag Docker image
         run: |
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      # Step 7: Push Docker image to AWS ECR
+      # Step 8: Push Docker image to AWS ECR
       - name: Push Docker image to AWS ECR
         run: |
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
