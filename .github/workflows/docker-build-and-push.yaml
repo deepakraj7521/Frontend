@@ -29,7 +29,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # Step 4: Log in to Amazon ECR using the prebuilt action
+      # Step 4: Log in to Amazon ECR
       - name: Log in to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
@@ -41,11 +41,11 @@ jobs:
           echo "ECR_REPOSITORY: ${{ secrets.REPO_NAME }}"
           echo "IMAGE_TAG: ${{ github.sha }}"
           if [ -z "${{ secrets.REPO_NAME }}" ]; then
-            echo "Error: REPO_NAME is empty. Please check your secrets."
+            echo "Error: REPO_NAME is empty. Please check your repository secrets."
             exit 1
           fi
 
-      # Step 6: Build the Docker image
+      # Step 6: Build Docker image
       - name: Build Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -56,11 +56,18 @@ jobs:
 
       # Step 7: Tag Docker image
       - name: Tag Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       # Step 8: Push Docker image to AWS ECR
       - name: Push Docker image to AWS ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
         run: |
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
