@@ -34,14 +34,14 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Step 5: Debugging step to verify environment variables
+      # Step 5: Debugging step to print environment variables
       - name: Print environment variables
         run: |
           echo "ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}"
           echo "ECR_REPOSITORY: ${{ secrets.REPO_NAME }}"
           echo "IMAGE_TAG: ${{ github.sha }}"
           if [ -z "${{ secrets.REPO_NAME }}" ]; then
-            echo "Error: REPO_NAME is empty. Please check your repository secrets."
+            echo "Error: ECR_REPOSITORY is empty. Please check your repository secrets."
             exit 1
           fi
 
@@ -52,6 +52,7 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          echo "Building Docker image with tag: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
 
       # Step 7: Tag Docker image
@@ -61,6 +62,7 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          echo "Tagging Docker image as: $ECR_REGISTRY/$ECR_REPOSITORY:latest"
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       # Step 8: Push Docker image to AWS ECR
@@ -69,6 +71,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
         run: |
+          echo "Pushing Docker image with tag: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
