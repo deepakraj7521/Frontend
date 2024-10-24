@@ -34,6 +34,12 @@ jobs:
         id: login-ecr
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URL }}
+          if [ $? -eq 0 ]; then
+            echo "Successfully logged in to Amazon ECR."
+          else
+            echo "Failed to log in to Amazon ECR."
+            exit 1
+          fi
 
       # Step 5: Build the Docker image
       - name: Build Docker image
@@ -43,13 +49,31 @@ jobs:
             exit 1
           fi
           docker build -t ${{ secrets.ECR_REPOSITORY_URL }}:latest .
+          if [ $? -eq 0 ]; then
+            echo "Docker image built successfully."
+          else
+            echo "Failed to build Docker image."
+            exit 1
+          fi
 
       # Step 6: Tag Docker image
       - name: Tag Docker image
         run: |
           docker tag ${{ secrets.ECR_REPOSITORY_URL }}:latest ${{ secrets.ECR_REPOSITORY_URL }}:latest
+          if [ $? -eq 0 ]; then
+            echo "Docker image tagged successfully."
+          else
+            echo "Failed to tag Docker image."
+            exit 1
+          fi
 
       # Step 7: Push Docker image to AWS ECR
       - name: Push Docker image to AWS ECR
         run: |
           docker push ${{ secrets.ECR_REPOSITORY_URL }}:latest
+          if [ $? -eq 0 ]; then
+            echo "Docker image pushed to AWS ECR successfully."
+          else
+            echo "Failed to push Docker image to AWS ECR."
+            exit 1
+          fi
