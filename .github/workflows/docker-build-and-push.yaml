@@ -38,17 +38,21 @@ jobs:
       - name: Build Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
+          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}  # This should now point to the correct secret
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          if [ -z "$ECR_REPOSITORY" ]; then
+            echo "ECR_REPOSITORY is not set. Please check your repository secrets."
+            exit 1
+          fi
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
 
-      # Step 6: Tag Docker image (this step is optional)
+      # Step 6: Tag Docker image
       - name: Tag Docker image
         run: |
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      # Step 7: Push Docker image to AWS_ECR
+      # Step 7: Push Docker image to AWS ECR
       - name: Push Docker image to AWS ECR
         run: |
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
