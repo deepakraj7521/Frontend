@@ -34,17 +34,25 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Step 5: Build and push Docker image
-      - name: Build and Push Docker image
+      # Step 5: Build the Docker image
+      - name: Build Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+
+      # Step 6: Tag Docker image (this step is optional)
+      - name: Tag Docker image
+        run: |
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      # Step 7: Push Docker image to AWS ECR
+      - name: Push Docker image to AWS ECR
+        run: |
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
 
 # name: Build and Push Docker Image to AWS ECR
