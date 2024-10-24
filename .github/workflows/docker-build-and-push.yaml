@@ -48,7 +48,7 @@ jobs:
         run: |
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      # Step 7: Push Docker image to AWS ECR
+      # Step 7: Push Docker image to AWS_ECR
       - name: Push Docker image to AWS ECR
         run: |
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
