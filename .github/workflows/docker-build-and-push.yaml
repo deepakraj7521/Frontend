@@ -34,38 +34,24 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Step 5: Debugging step to print environment variables
-      - name: Print environment variables
-        run: |
-          echo "ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}"
-          echo "ECR_REPOSITORY: ${{ secrets.REPO_NAME }}"
-          echo "IMAGE_TAG: ${{ github.sha }}"
-          if [ -z "${{ secrets.REPO_NAME }}" ]; then
-            echo "Error: ECR_REPOSITORY is empty. Please check your repository secrets."
-            exit 1
-          fi
-
-      # Step 6: Build Docker image
+      # Step 5: Build Docker image
       - name: Build Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
-          IMAGE_TAG: v1.0.0-${{ github.sha.substr(0, 8) }}
         run: |
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-8)
+          IMAGE_TAG="v1.0.0-${SHORT_SHA}"
           echo "Building Docker image with tag: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
-      # Combined Step: Tag and Push Docker image to AWS ECR
+      # Step 6: Tag and Push Docker image to AWS ECR
       - name: Tag and Push Docker image to AWS ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
-          IMAGE_TAG: v1.0.0-${{ github.sha.substr(0, 8) }}
         run: |
-          echo "Tagging Docker image as: $ECR_REGISTRY/$ECR_REPOSITORY:latest"
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          
+          IMAGE_TAG=${{ env.IMAGE_TAG }}
           echo "Pushing Docker image with tag: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          # echo "Pushing Docker image with tag: $ECR_REGISTRY/$ECR_REPOSITORY:latest"
-          # docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
